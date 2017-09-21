@@ -5,7 +5,7 @@
 # Authors: Nalpas, N.C.; Correia, C.N. (2014) 
 # Zenodo DOI badge: http://dx.doi.org/10.5281/zenodo.16164
 # Version 1.2.0
-# Last updated on: 12/07/2016
+# Last updated on: 
 
 ################################
 # Download and files check sum #
