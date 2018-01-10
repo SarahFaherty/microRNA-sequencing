@@ -6,7 +6,7 @@
 # Authors: Sarah Faherty O'Donnell
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 08/01/2018
+# Last updated on: 10/01/2018
 
 ###############################
 # Generating md5 files in BYU supercomputer #
@@ -70,30 +70,36 @@ chmod -R 555 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data
 # for details: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 # Create and enter the quality check output directory:
-mkdir -p $HOME/scratch/miRNAseqValidation/quality_check/pre-filtering
+
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1
 cd !$
 
 # Run FastQC in one file to see if it's working well:
-fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering \
+fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1 \
 --noextract --nogroup -t 2 \
 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/NEXTflex-v10_S8_L001_R1_001.fastq.gz
 
+# Check the QC report for this file 
+# Use WinSCP to drag folders to local computer and launch html file from local
+
+
 # Create a bash script to perform FastQC quality check on all fastq.gz files in the various project directories using *:
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project*/ \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/ \
 -name *fastq.gz`; do echo "fastqc --noextract --nogroup -t 2 \
--o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering $file" \
+-o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/ $file" \
 >> fastqc.sh; done
 
-# Split and run all scripts on Stampede:
-split -d -l 24 fastqc.sh fastqc.sh.
-for script in `ls fastqc.sh.*`
-do
-chmod 755 $script
-nohup ./$script > ${script}.nohup &
-done
+# Run script on Rodeo
+# Didn't need to split the fastqc because there were only 16 files in Project 1 
+chmod 755 fastqc.sh
+nohup ./fastqc.sh > fastqc.sh.nohup & 
+
+# Check the number of files in fastqc.sh is correct
+# Given we have 8 Project1 libraries across 2 lanes, wc should be 16
+wc -l fastqc.sh
 
 # Check if all the files were processed:
-for file in `ls fastqc.sh.0*.nohup`; \
+for file in `ls fastqc.sh.nohup`; \
 do more $file | grep "Failed to process file" >> failed_fastqc.txt
 done
 
@@ -101,96 +107,145 @@ done
 rm -r *.html
 
 # Check all output from FastQC:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering/tmp
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp
 
 for file in `ls *_fastqc.zip`; do unzip \
-$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering/tmp; \
+$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp; \
 done
 
 for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp \
 -name summary.txt`; do more $file >> reports_pre-filtering.txt; \
 done
 
 for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp \
 -name fastqc_data.txt`; do head -n 10 $file >> basic_stats_pre-filtering.txt; \
 done
 
 # Remove temporary folder and its files:
-rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/pre-filtering/tmp
+rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp
+
+# Use Winscp to transfer fastqc files to local computer
+# Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/cd quality
+
 
 #############################################
 # Trimming of adapter sequence within reads #
 #############################################
+# Check what version of cutadapt we have on Rodeo
+cutadapt --v 
+
+# Check if this is the latest version online
+# If not, do we require the newer version for this analysis?
+# Check the changes between the two versions and make decision
 
 # Required software is cutadapt (version 1.10).
 # Consult manual for details:
 # https://cutadapt.readthedocs.io/en/stable/guide.html
+# Use "cutadapt --help" to see all command-line options.
+# See http://cutadapt.readthedocs.io/ for full documentation.
+
 # download and install TrimGalore
 curl -fsSL https://github.com/FelixKrueger/TrimGalore/archive/0.4.3.tar.gz -o trim_galore.tar.gz
 tar xvzf trim_galore.tar.gz
 
 # Create and enter working directory:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/miRNAseqValidation/quality_check/trimming
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/
 cd !$
 
-############################
+#############################################
+# Use cutadapt to trim one file in Project1 #
+#############################################
 # Path to location of project 1 (NEXTFlex) raw data is \
-# ~/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1
-###########################
+# ~/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/
+#############################################
+# Consult NEXTflex manual for details on trimming:
+# http://www.biooscientific.com/Portals/0/Manuals/NGS/5132-05-NEXTflex-Small-RNA-Seq-v3-16-06.pdf
+# 3' adapter sequence for NEXTflex kit is TGGAATTCTCGGGTGCCAAGG
+# -u 4 and -u -4 is used here to trim 4 bases at both ends after adapter clipping
+# -u is the same as --cut
+# This was specified in NEXTflex manual pg.5 
+# -O 10 is the minimum overlap length of specified adapter seq and adapter seq \
+# in reads
+# --discard-untrimmed
+# -m 17 will discard reads less than 17bp
+# This resulted in the following summary: 
+# Total reads processed:              13,231,215
+# Reads with adapters:                11,066,716 (83.6%)
+# Reads that were too short:           1,325,513 (10.0%)
+# Reads written (passing filters):     9,741,203 (73.6%)
+
+cutadapt -a TGGAATTCTCGGGTGCCAAGG -O 10 --discard-untrimmed -m 17 \
+-u 4 -u -4 -o test_trim.fastq.gz \
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/NEXTflex-v10_S8_L001_R1_001.fastq.gz
+
+# If happy with the trimming parameters, remove the test_trim file
+rm test_trim.fastq.gz
 
 # Create bash script to trim the Illumina RNA 3’ Adapter (RA3) of each
-# FASTQ file while keeping the sequencing lane information:
+# FASTQ file while keeping the sequencing lane information.
+# Make sure to include all parameters of the code above
 for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1 \
 -name *fastq.gz`; \
 do outfile=`basename $file | perl -p -e 's/.fastq.gz//'`; \
-echo "cutadapt -a TGGAATTCTCGGGTGCCAAGG -O 10 --match-read-wildcards \
---discard-untrimmed -m 17 -o ./${outfile}_trim.fastq.gz $file" \
+echo "cutadapt -a TGGAATTCTCGGGTGCCAAGG -O 10 \
+--discard-untrimmed -m 17 -u 4 -u -4 -o ./${outfile}_trim.fastq.gz $file" \
 >> cutadapt.sh; \
 done
 
-# Split and run scripts on Stampede:
-split -d -l 24 cutadapt.sh cutadapt.sh.
-for script in `ls cutadapt.sh.*`
-do
-chmod 755 $script
-nohup ./$script > ${script}.nohup &
-done
-# I stopped here on the 20.11.2017
-# 
+# Run scripts on Rodeo:
+chmod 755 cutadapt.sh
+nohup ./cutadapt.sh > cutadapt.sh.nohup &
+# cutadapt.sh.nohup is where the output summaries from cutadapt get sent
 
 # Check if all files were processed:
-grep -c 'Finished' cutadapt.sh.00.nohup
-grep -c 'Finished' cutadapt.sh.01.nohup
+grep -c 'Finished' cutadapt.sh.nohup
+# or 
+tail cutadapt.sh.nohup
+
 
 # Generate a master file containing cutadapt trimming stats results:
-for file in `ls $HOME/scratch/miRNAseqValidation/fastq_sequence/*.nohup`; \
-do grep -oP "E\d+_\w+_L00(5|6)\_R1_001.fastq.gz" $file \
->> $HOME/scratch/miRNAseqValidation/fastq_sequence/filename.txt; \
-grep "Total reads processed\:" $file | \
-perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)/$1/' \
->> $HOME/scratch/miRNAseqValidation/fastq_sequence/processed.txt; \
-grep "Reads with adapters\:" $file | \
-perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
->> $HOME/scratch/miRNAseqValidation/fastq_sequence/reads_with_adapters.txt; \
-grep "Reads that were too short\:" $file | \
-perl -p -e 's/\w*\s\w*\s\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
->> $HOME/scratch/miRNAseqValidation/fastq_sequence/short.txt; \
-grep "Reads written (passing filters)\:" $file | \
-perl -p -e 's/\w*\s\w*\s.\w*\s\w*.\:\s*(\d*.\d*.\d*)\s.*/$1/' \
->> $HOME/scratch/miRNAseqValidation/fastq_sequence/trimmed.txt; \
-paste filename.txt processed.txt reads_with_adapters.txt short.txt trimmed.txt \
-> $HOME/scratch/miRNAseqValidation/fastq_sequence/trimmed_stats.txt; \
-done
+# I only have one .nohup file in this project so I don't need a for loop
+# grep -oP uses perl reg expression for grep to get the name of the files
+# this command will get the name of each file starting with NEXT
+# and finishing with trim.fastq.gz
+# . in perl means anything
+# + in perl means for one or more characters
+# because its not a for loop we don't need to append to the .txt file
 
+grep -oP "NEXT.+trim.fastq.gz" cutadapt.sh.nohup \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/filename.txt \
+grep "Total reads processed\:" cutadapt.sh.nohup | \
+perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)/$1/' \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/processed.txt \
+grep "Reads with adapters\:" cutadapt.sh.nohup | \
+perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/reads_with_adapters.txt \
+grep "Reads that were too short\:" cutadapt.sh.nohup | \
+perl -p -e 's/\w*\s\w*\s\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/short.txt \
+grep "Reads written (passing filters)\:" cutadapt.sh.nohup | \
+perl -p -e 's/\w*\s\w*\s.\w*\s\w*.\:\s*(\d*.\d*.\d*)\s.*/$1/' \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/trimmed.txt \
+paste filename.txt processed.txt reads_with_adapters.txt short.txt trimmed.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/trimmed_stats.txt
 echo -e "Sample\tTotal reads processed\tReads with \
 adapters\tReads that were too short\tReads written (passing filters)\t" \
-| cat - $HOME/scratch/miRNAseqValidation/fastq_sequence/trimmed_stats.txt \
-> $HOME/scratch/miRNAseqValidation/fastq_sequence/trimming_stats.txt
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/headers.txt \
+| cat headers.txt trimmed_stats.txt > trimming_stats.txt
+
+# Check the correct number of files are in the new txt files
+# should be 16 for each
+wc -l filename.txt
+wc -l processed.txt
+wc -l reads_with_adapters.txt
+wc -l short.txt
+wc -l trimmed.txt
+
 
 rm -r filename.txt processed.txt reads_with_adapters.txt \
-short.txt trimmed.txt trimmed_stats.txt
+short.txt trimmed.txt trimmed_stats.txt headers.txt
 
 ###############################################
 # FastQC quality check of trimmed FASTQ files #
@@ -200,32 +255,33 @@ short.txt trimmed.txt trimmed_stats.txt
 # for details: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 # Create and enter working directory:
-mkdir $HOME/scratch/miRNAseqValidation/quality_check/post_filtering
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1
 cd !$
 
 # Run FastQC in one file to see if it's working well:
-fastqc -o $HOME/scratch/miRNAseqValidation/quality_check/post_filtering \
+fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1 \
 --noextract --nogroup -t 2 \
-$HOME/scratch/miRNAseqValidation/fastq_sequence/E10_CGTACG_L005_R1_001_trim.fastq.gz
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/NEXTflex-v10_S8_L001_R1_001_trim.fastq.gz
 
 # Create bash script to perform FastQC quality check on all trim.fastq.gz files:
-for file in `find $HOME/scratch/miRNAseqValidation/fastq_sequence \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/ \
 -name *trim.fastq.gz`; do echo "fastqc --noextract --nogroup -t 2 \
--o $HOME/scratch/miRNAseqValidation/quality_check/post_filtering $file" \
+-o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1 $file" \
 >> fastqc.sh; done
 
-# Split and run all scripts on Stampede:
-split -d -l 24 fastqc.sh fastqc.sh.
-for script in `ls fastqc.sh.*`
-do
-chmod 755 $script
-nohup ./$script > ${script}.nohup &
-done
+# Run all scripts on Rodeo:
+chmod 755 fastqc.sh
+nohup ./fastqc.sh > fastqc.sh.nohup &
+
+# Check if correct number of files are being processed
+wc -l fastqc.sh
 
 # Check if all the files were processed:
-for file in `ls fastqc.sh.0*.nohup`; \
+for file in `ls fastqc.sh.nohup`; \
 do more $file | grep "Failed to process file" >> failed_fastqc.txt
 done
+wc -l failed_fastqc.txt
 
 # Deleted all the HTML files:
 rm -r *.html
@@ -234,16 +290,16 @@ rm -r *.html
 mkdir tmp
 
 for file in `ls *_fastqc.zip`; do unzip \
-$file -d $HOME/scratch/miRNAseqValidation/quality_check/post_filtering/tmp; \
+$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp; \
 done
 
 for file in \
-`find $HOME/scratch/miRNAseqValidation/quality_check/post_filtering/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp \
 -name summary.txt`; do more $file >> reports_post-filtering.txt; \
 done
 
 for file in \
-`find $HOME/scratch/miRNAseqValidation/quality_check/post_filtering/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp \
 -name fastqc_data.txt`; do head -n 10 $file >> basic_stats_post-filtering.txt; \
 done
 
