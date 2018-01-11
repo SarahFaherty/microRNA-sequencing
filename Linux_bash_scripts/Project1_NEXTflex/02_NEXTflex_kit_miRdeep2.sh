@@ -14,15 +14,15 @@
 ########################################################################
 
 # Create and enter temporary workiing directory:
-mkdir $HOME/scratch/miRNAseqValidation/fastq_sequence/tmp
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp
 cd !$
 
 # Create bash script to uncompress and merge trim.fast.gz from lanes
-# 005 and 006 for each library:
-for file in `find $HOME/scratch/miRNAseqValidation/fastq_sequence \
--name *_L005_R1_001_trim.fastq.gz`; \
-do file2=`echo $file | perl -p -e 's/(_L005_)/_L006_/'`; \
-sample=`basename $file | perl -p -e 's/(E\d+_)\w+_L\d+_R\d_\d*_trim.fastq.gz/$1/'`; \
+# 001 and 002 for each library:
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1 \
+-name *_L001_R1_001_trim.fastq.gz`; \
+do file2=`echo $file | perl -p -e 's/(_L001_)/_L002_/'`; \
+sample=`basename $file | perl -p -e 's/(NEXT.*_).*_trim.fastq.gz/$1/'`; \
 echo "zcat $file $file2 > ${sample}trim.fastq" \
 >> uncompress_merge.sh; \
 done
@@ -39,12 +39,12 @@ nohup ./uncompress_merge.sh &
 # http://bowtie-bio.sourceforge.net/manual.shtml
 
 # Create and enter the Index reference genome directory:
-mkdir -p /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0
+mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0
 cd !$
 
 # Index the reference genome UMD3.1 using Bowtie:
 nohup bowtie-build \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/source_file/Btau_UMD3.1_multi.fa \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/source_file/Btau_UMD3.1_multi.fa \
 Btau_UMD3.1_multi &
 
 #############################################################
