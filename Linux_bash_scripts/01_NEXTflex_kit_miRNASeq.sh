@@ -129,7 +129,6 @@ rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filter
 # Use Winscp to transfer fastqc files to local computer
 # Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/cd quality
 
-
 #############################################
 # Trimming of adapter sequence within reads #
 #############################################
@@ -310,19 +309,39 @@ rm -r tmp
 # Reference genome UMD3.1 preparation #
 #######################################
 
+# As we use miRbase as an annotation source for miRNA analyses
+# We must use the same assembly version that they did
+#
+##gff-version 3
+##date 2014-6-22
+#
+# Chromosomal coordinates of Bos taurus microRNAs
+# microRNAs:               miRBase v21
+# genome-build-id:         UMD3.1
+# genome-build-accession:  NCBI_Assembly:GCA_000003055.3 
+# ftp://ftp.ncbi.nih.gov/genomes/Bos_taurus/ARCHIVE/BUILD.3.1/Assembled_chromosomes/
+# This arhived assembly didn't have the mitochondrial chromosomes
+
 # Create and enter the reference genome directory:
-mkdir -p /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/source_file
+mkdir -p /workspace/genomes/bostaurus/UMD3.1_NCBI/source_file
 cd !$
 
-# Download the reference genome UMD3.1 from NCBI into Stampede:
+# Download the reference genome UMD3.1 (archived annotation_release.103) from NCBI into Rodeo:
 nohup wget -r -nd \
-"ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1_*.fa.gz" &
+"ftp://ftp.ncbi.nlm.nih.gov/genomes/Bos_taurus/ARCHIVE/ANNOTATION_RELEASE.103/Assembled_chromosomes/seq/bt_ref_Bos_taurus_UMD_3.1_*.fa.gz" &
 
 # Uncompress the reference genome UMD3.1 from NCBI:
+# gunzip -c writes on standard output, keeping original files unchanged
+# All uncompressed chromosomes will be collated in Btau_UMD3.1_multi.fa
+# Individual chromosomes are then also uncompressed
 gunzip -c bt_ref_Bos_taurus_UMD_3.1_*.fa.gz > Btau_UMD3.1_multi.fa
 gunzip bt_ref_Bos_taurus_UMD_3.1_*.fa.gz
 
 # Modify headers in the reference genome UMD3.1 from NCBI:
+# This moves chr to the start of the header
+# perl: -p assumes loop like -n but prints line also, like sed
+# perl: -i edits <> files in place
+# perl: -e one line of program
 for file in `ls *.fa`; \
 do perl -p -i -e \
 's/^>(.*)(Bos taurus breed Hereford chromosome )(.{1,2})(\,.*)$/>chr$3 $1$2$3$4/' \
@@ -341,20 +360,27 @@ cd !$
 # Download the miRNA annotation file from miRBase (based on reference 
 # genome UMD3.1 from NCBI):
 wget ftp://mirbase.org/pub/mirbase/21/genomes/bta.gff3
+wget ftp://mirbase.org/pub/mirbase/21/hairpin.fa.gz
 
-# Convert the GFF3 annotation file from miRBase to GTF format:
-perl /home/nnalpas/SVN/gff2gtf.pl -i \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/annotation_file/bta.gff3 \
--o /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/annotation_file/Btau_miRNA2016.gtf
+# Convert the GFF3 annotation file from miRBase to GTF format
+# using the perl script gff2gtf.pl found in scripts directory on Rodeo:
+cd /home/workspace/genomes/bostaurus/UMD3.1_NCBI/annotation_file
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/gff2gtf.pl -i \
+bta.gff3 \
+-o Btau_miRNA2016.gtf .
 grep -P "\tpre-miRNA\t" Btau_miRNA2016.gtf >> Btau_pre-miRNA2016.gtf
 grep -P "\tmiRNA\t" Btau_miRNA2016.gtf >> Btau_mature-miRNA2016.gtf
+
 
 ##########################################################
 # Preparation of Bos taurus miRNA sequences from miRBase #
 ##########################################################
 
 # Go to working directory:
-cd /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta
+cd ..
+cd genomes/bostaurus/UMD3.1_NCBI/
+mkdir miRBase_fasta
+cd !$
 # Download the various FASTA files for mature, high confidence mature,
 # precursor(hairpin), and high confidence precursor miRNA sequences
 # from miRBase (version 21):
@@ -365,37 +391,37 @@ wget ftp://mirbase.org/pub/mirbase/21/high_conf_mature.fa.gz
 
 # Uncompress the miRNA FASTA files from miRBase:
 for file in \
-`ls /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta*.gz`; \
+`ls *.gz`; \
 do gzip -d $file; \
 done
 
 # Combine information from miRNA annotation file and mature + high confidence
 # mature FASTA sequences obtained from miRBase:
-perl /home/nnalpas/Scripts/miRNA_info_grepping.pl -fasta \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/miRNA_info_grepping.pl -fasta \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
 -gff \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/annotation_file/bta.gff3 \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/annotation_file/bta.gff3 \
 -output mature_miRNA_Btaurus.txt
 
-perl /home/nnalpas/Scripts/miRNA_info_grepping.pl -fasta \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_mature.fa \
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/miRNA_info_grepping.pl -fasta \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_mature.fa \
 -gff \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/annotation_file/bta.gff3 \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/annotation_file/bta.gff3 \
 -output high_conf_mature_miRNA_Btaurus.txt
 
 # Create the mature miRNA FASTA file for Bos taurus sequences only:
-perl /home/nnalpas/SVN/Fasta_keep_value.pl -fasta \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/Fasta_keep_value.pl -fasta \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
 -keep Bos -output bta_mature-miRNA.fa
 
 # Create the mature miRNA FASTA file for other all species:
-perl /home/nnalpas/SVN/Fasta_ignore_value.pl -fasta \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/Fasta_ignore_value.pl -fasta \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/mature.fa \
 -ignore Bos -output other_mature-miRNA.fa
 
 # Create the precursor (hairpin) miRNAs FASTA file for Bos taurus sequences only:
-perl /home/nnalpas/SVN/Fasta_keep_value.pl -fasta \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/hairpin.fa \
+perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/Fasta_keep_value.pl -fasta \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/hairpin.fa \
 -keep Bos -output bta_hairpin-miRNA.fa
 
 ######################
