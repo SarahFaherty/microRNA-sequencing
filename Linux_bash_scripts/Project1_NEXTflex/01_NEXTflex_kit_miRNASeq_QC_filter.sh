@@ -6,7 +6,7 @@
 # Authors: Sarah Faherty O'Donnell
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 10/01/2018
+# Last updated on: 11/01/2018
 
 ###############################
 # Generating md5 files in BYU supercomputer #
@@ -360,7 +360,6 @@ cd !$
 # Download the miRNA annotation file from miRBase (based on reference 
 # genome UMD3.1 from NCBI):
 wget ftp://mirbase.org/pub/mirbase/21/genomes/bta.gff3
-wget ftp://mirbase.org/pub/mirbase/21/hairpin.fa.gz
 
 # Convert the GFF3 annotation file from miRBase to GTF format
 # using the perl script gff2gtf.pl found in scripts directory on Rodeo:
@@ -389,6 +388,7 @@ wget ftp://mirbase.org/pub/mirbase/21/high_conf_hairpin.fa.gz
 wget ftp://mirbase.org/pub/mirbase/21/mature.fa.gz
 wget ftp://mirbase.org/pub/mirbase/21/high_conf_mature.fa.gz
 
+# In this directory (MiRBase_fasta)
 # Uncompress the miRNA FASTA files from miRBase:
 for file in \
 `ls *.gz`; \
@@ -431,8 +431,5 @@ perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/Fasta_keep
 # Continue pipeline to generate counts per miRNA via two different methods,
 # consult the appropriate pipelines:
 
-# Method 1: Novoalign-featureCounts softwares,
-# see pipeline "BioValidation-miRNA_Novoalign-featureCounts.sh"
-
-# Method 2: miRdeep2 software,
+# Method 1: miRdeep2 software,
 # see pipeline "BioValidation-miRNA_miRdeep2.sh"
