@@ -319,7 +319,7 @@ rm -r tmp
 # microRNAs:               miRBase v21
 # genome-build-id:         UMD3.1
 # genome-build-accession:  NCBI_Assembly:GCA_000003055.3 
-# ftp://ftp.ncbi.nih.gov/genomes/Bos_taurus/ARCHIVE/BUILD.3.1/Assembled_chromosomes/
+# ftp://ftp.ncbi.nih.gov/genomes/Bos_taurus/ARCHIVE/ANNOTATION_RELEASE.103/Assembled_chromosomes/seq/
 # This arhived assembly didn't have the mitochondrial chromosomes
 
 # Create and enter the reference genome directory:
