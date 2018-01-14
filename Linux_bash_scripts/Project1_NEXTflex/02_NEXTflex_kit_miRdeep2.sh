@@ -7,7 +7,7 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 11/01/2018
+# Last updated on: 14/01/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
@@ -35,6 +35,7 @@ nohup ./uncompress_merge.sh &
 # Index reference genome using Bowtie #
 #######################################
 
+#Rodeo version: bowtie1.2
 # Updated version: Bowtie 1.2.2 
 # Bowtie uses the Burrows–Wheeler transform 
 # consult manual for details:
@@ -42,13 +43,16 @@ nohup ./uncompress_merge.sh &
 
 
 # Create and enter the Index reference genome directory:
-mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0
+mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2
 cd !$
 
 # Index the reference genome UMD3.1 using Bowtie:
 nohup bowtie-build \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/source_file/Btau_UMD3.1_multi.fa \
 Btau_UMD3.1_multi &
+
+# Test installation of Bowtie index ???
+bowtie -c Btau_UMD3.1_multi  GCGTGAGCTATGAGAAAGCGCCACGCTTCC
 
 #############################################################
 # Preprocessing of miRNA-seq data using miRDeep2: mapper.pl #
