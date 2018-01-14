@@ -35,8 +35,11 @@ nohup ./uncompress_merge.sh &
 # Index reference genome using Bowtie #
 #######################################
 
-# Required software is Bowtie 1.1.0, consult manual for details:
+# Updated version: Bowtie 1.2.2 
+# Bowtie uses the Burrows–Wheeler transform 
+# consult manual for details:
 # http://bowtie-bio.sourceforge.net/manual.shtml
+
 
 # Create and enter the Index reference genome directory:
 mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0

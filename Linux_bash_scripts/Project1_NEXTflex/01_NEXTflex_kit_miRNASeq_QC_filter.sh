@@ -354,7 +354,7 @@ $file; \
 done
 
 # Create and enter the reference genome annotation directory:
-mkdir -p /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/annotation_file
+mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/annotation_file
 cd !$
 
 # Download the miRNA annotation file from miRBase (based on reference 
@@ -366,9 +366,9 @@ wget ftp://mirbase.org/pub/mirbase/21/genomes/bta.gff3
 cd /home/workspace/genomes/bostaurus/UMD3.1_NCBI/annotation_file
 perl $HOME/BTB_SFI_Project/WP2/Scripts/miRNA_seq_scripts/Perl_scripts/gff2gtf.pl -i \
 bta.gff3 \
--o Btau_miRNA2016.gtf .
-grep -P "\tpre-miRNA\t" Btau_miRNA2016.gtf >> Btau_pre-miRNA2016.gtf
-grep -P "\tmiRNA\t" Btau_miRNA2016.gtf >> Btau_mature-miRNA2016.gtf
+-o Btau_miRNA2018.gtf .
+grep -P "\tpre-miRNA\t" Btau_miRNA2018.gtf >> Btau_pre-miRNA2018.gtf
+grep -P "\tmiRNA\t" Btau_miRNA2018.gtf >> Btau_mature-miRNA2018.gtf
 
 
 ##########################################################
@@ -376,9 +376,8 @@ grep -P "\tmiRNA\t" Btau_miRNA2016.gtf >> Btau_mature-miRNA2016.gtf
 ##########################################################
 
 # Go to working directory:
-cd ..
-cd genomes/bostaurus/UMD3.1_NCBI/
-mkdir miRBase_fasta
+
+mkdir /home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/
 cd !$
 # Download the various FASTA files for mature, high confidence mature,
 # precursor(hairpin), and high confidence precursor miRNA sequences
