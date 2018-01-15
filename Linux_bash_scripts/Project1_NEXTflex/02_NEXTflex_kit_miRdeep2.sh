@@ -7,13 +7,13 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 14/01/2018
+# Last updated on: 15/01/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
 ########################################################################
 
-# Create and enter temporary workiing directory:
+# Create and enter temporary working directory:
 mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp
 cd !$
 
@@ -35,7 +35,7 @@ nohup ./uncompress_merge.sh &
 # Index reference genome using Bowtie #
 #######################################
 
-#Rodeo version: bowtie1.2
+# Rodeo version: bowtie1.2
 # Updated version: Bowtie 1.2.2 
 # Bowtie uses the Burrows–Wheeler transform 
 # consult manual for details:
@@ -43,16 +43,17 @@ nohup ./uncompress_merge.sh &
 
 
 # Create and enter the Index reference genome directory:
-mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2
+mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index
 cd !$
 
 # Index the reference genome UMD3.1 using Bowtie:
 nohup bowtie-build \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/source_file/Btau_UMD3.1_multi.fa \
-Btau_UMD3.1_multi &
+Btau_UMD3.1_multi_index &
 
-# Test installation of Bowtie index ???
-bowtie -c Btau_UMD3.1_multi  GCGTGAGCTATGAGAAAGCGCCACGCTTCC
+# Test installation of Bowtie index
+# using sequence from ncbi chr1 bos taurus fasta
+bowtie -c Btau_UMD3.1_multi_index  AGTACTTTGACTCCTCTAACTAGGCAAGGTTTTGACTGAAA
 
 #############################################################
 # Preprocessing of miRNA-seq data using miRDeep2: mapper.pl #
@@ -60,33 +61,35 @@ bowtie -c Btau_UMD3.1_multi  GCGTGAGCTATGAGAAAGCGCCACGCTTCC
 
 # Required software is miRDeep2 v.2.0.0.8, consult manual/tutorial for details:
 # https://www.mdc-berlin.de/8551903/en/
+# Check version of miRdeep2
+mirdeep2 --version
 
 # Create and enter the miRDeep2 directory for mapping work:
-mkdir -p $HOME/scratch/miRNAseqValidation/mirdeep2/mapper
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper
 cd !$
 
 # Create symbolic links to FASTQ files:
 for file in \
-`ls $HOME/scratch/miRNAseqValidation/fastq_sequence/tmp/*_trim.fastq`; \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp/*_trim.fastq`; \
 do ln -s \
-$file $HOME/scratch/miRNAseqValidation/mirdeep2/mapper/`basename $file`; \
+$file $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/`basename $file`; \
 done
 
 # Run mapper.pl in one FASTQ file to see if it's working well:
-mapper.pl E10_trim.fastq -e -h -m -o 3 -l 17 -r 50 -q -v -p \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0/Btau_UMD3.1_multi \
+mapper.pl NEXTflex-v10_*trim.fastq -e -h -m -o 3 -l 17 -r 50 -q -v -p \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
 -s test_collapsed.fa -t test.arf
 
 # Create bash script to map miRNA reads to the reference genome:
 for file in `ls *_trim.fastq`; \
 do outfile=`basename $file | perl -p -e 's/_trim\.fastq//'`; \
 echo "mapper.pl $file -e -h -m -o 3 -l 17 -r 50 -q -v -p \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/bowtie1.1.0/Btau_UMD3.1_multi \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
 -s ${outfile}_collapsed.fa -t ${outfile}.arf" \
 >> mapper.sh; \
 done
 
-# Split and run all scripts on Stampede:
+# Split and run all scripts on Rodeo:
 split -d -l 12 mapper.sh mapper.sh.
 for script in `ls mapper.sh.*`
 do
@@ -99,27 +102,27 @@ done
 ################################################################
 
 # Create and enter the working directory:
-mkdir -p $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier
 cd !$
 
 # Run quantifier.pl in one FASTA file to see if it's working well:
 quantifier.pl -p \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_hairpin-miRNA.fa \
--m /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_mature-miRNA.fa \
--r $HOME/scratch/miRNAseqValidation/mirdeep2/mapper/E10_collapsed.fa -t bta
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_hairpin-miRNA.fa \
+-m /home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_mature-miRNA.fa \
+-r $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/NEXTflex-v10*_collapsed.fa -t bta
 
 # Create a shell script to quantify the mapped mature miRNAs:
 # [You will need the mature and precursor (hairpin) miRNA FASTA files for
 # Bos taurus sequences only. Please refer to the 
 # BioValidation-miRNA-seq_QC_filter.sh script]
 for file in \
-`ls $HOME/scratch/miRNAseqValidation/mirdeep2/mapper/*_collapsed.fa`; \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/*_collapsed.fa`; \
 do outfile=`basename $file | perl -p -e 's/_collapsed.fa//'`; \
-echo "mkdir -p $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/$outfile; \
-cd $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/$outfile; \
+echo "mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/$outfile; \
+cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/$outfile; \
 quantifier.pl -p \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_hairpin-miRNA.fa \
--m /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_mature-miRNA.fa \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_hairpin-miRNA.fa \
+-m /home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/bta_mature-miRNA.fa \
 -r $file -t bta" >> quantifier.sh; \
 done
 
@@ -132,18 +135,18 @@ nohup ./$script > ${script}.nohup &
 done
 
 # Create and enter the working directory for high confidence seqs from miRBase:
-mkdir $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/high_confidence
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/high_confidence
 cd !$
 # Create a shell script to quantify the mapped high confidence mature and
 # precursor (hairpin) miRNAs:
 for file in \
-`ls $HOME/scratch/miRNAseqValidation/mirdeep2/mapper/*_collapsed.fa`; \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/*_collapsed.fa`; \
 do outfile=`basename $file | perl -p -e 's/_collapsed.fa//'`; \
-echo "mkdir -p $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/high_confidence/$outfile; \
-cd $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/high_confidence/$outfile; \
+echo "mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/high_confidence/$outfile; \
+cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/high_confidence/$outfile; \
 quantifier.pl -p \
-/workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_mature.fa \
--m /workspace/storage/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_hairpin.fa \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_mature.fa \
+-m /home/workspace/genomes/bostaurus/UMD3.1_NCBI/miRBase_fasta/high_conf_hairpin.fa \
 -r $file -t bta" >> quantifier_high_conf.sh; \
 done
 
@@ -157,22 +160,22 @@ done
 
 # Collect all read counts files from regular and high confidence miRNAs for
 # transfering into laptop using WinSCP:
-mkdir -p $HOME/scratch/miRNAseqValidation/Counts/mirdeep2/regular
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/regular
 cd !$
-for file in `find $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/E* \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/NEXT* \
 -name miRNAs_expressed_all_samples*.csv`; \
 do outfile=`echo $file | perl -p -e 's/^.*quantifier\/(.*)\/.*$/$1/'`; \
 cp $file \
-$HOME/scratch/miRNAseqValidation/Counts/mirdeep2/regular/${outfile}_expressed.csv; \
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/regular/${outfile}_expressed.csv; \
 done
 
-mkdir -p $HOME/scratch/miRNAseqValidation/Counts/mirdeep2/high_conf
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/high_conf
 cd !$
-for file in `find $HOME/scratch/miRNAseqValidation/mirdeep2/quantifier/high_confidence/E* \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/quantifier/high_confidence/NEXT* \
 -name miRNAs_expressed_all_samples*.csv`; \
 do outfile=`echo $file | perl -p -e 's/^.*quantifier\/.*\/(.*)\/.*$/$1/'`; \
 cp $file \
-$HOME/scratch/miRNAseqValidation/Counts/mirdeep2/high_conf/${outfile}_expressed_high_conf.csv; \
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/high_conf/${outfile}_expressed_high_conf.csv; \
 done
 
 ########################################################################
