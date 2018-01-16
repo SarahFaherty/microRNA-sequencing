@@ -22,8 +22,8 @@ cd !$
 for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1 \
 -name *_L001_R1_001_trim.fastq.gz`; \
 do file2=`echo $file | perl -p -e 's/(_L001_)/_L002_/'`; \
-sample=`basename $file | perl -p -e 's/(NEXT.*_).*_trim.fastq.gz/$1/'`; \
-echo "zcat $file $file2 > ${sample}trim.fastq" \
+sample=`basename $file | perl -p -e 's/(NEXT\w+-\w\d+_\w\d_)\w+\d+_\w+\d+_\d*_trim.fastq.gz/$1/'`; \
+echo "zcat $file $file2 > ${sample}merged.trim.fastq" \
 >> uncompress_merge.sh; \
 done
 
@@ -36,11 +36,9 @@ nohup ./uncompress_merge.sh &
 #######################################
 
 # Rodeo version: bowtie1.2
-# Updated version: Bowtie 1.2.2 
 # Bowtie uses the Burrows–Wheeler transform 
 # consult manual for details:
 # http://bowtie-bio.sourceforge.net/manual.shtml
-
 
 # Create and enter the Index reference genome directory:
 mkdir -p /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index
@@ -61,8 +59,10 @@ bowtie -c Btau_UMD3.1_multi_index  AGTACTTTGACTCCTCTAACTAGGCAAGGTTTTGACTGAAA
 
 # Required software is miRDeep2 v.2.0.0.8, consult manual/tutorial for details:
 # https://www.mdc-berlin.de/8551903/en/
-# Check version of miRdeep2
-mirdeep2 --version
+# Check installation of software
+mapper.pl
+quantifier.pl
+miRDeep2.pl
 
 # Create and enter the miRDeep2 directory for mapping work:
 mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper
@@ -70,19 +70,19 @@ cd !$
 
 # Create symbolic links to FASTQ files:
 for file in \
-`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp/*_trim.fastq`; \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp/*_merged.trim.fastq`; \
 do ln -s \
 $file $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/`basename $file`; \
 done
 
 # Run mapper.pl in one FASTQ file to see if it's working well:
-mapper.pl NEXTflex-v10_*trim.fastq -e -h -m -o 3 -l 17 -r 50 -q -v -p \
+nohup mapper.pl NEXTflex-v10_S8_merged.trim.fastq -e -h -m -o 15 -l 17 -r 50 -q -v -p \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
--s test_collapsed.fa -t test.arf
+-s test_collapsed.fa -t test.arf &
 
 # Create bash script to map miRNA reads to the reference genome:
-for file in `ls *_trim.fastq`; \
-do outfile=`basename $file | perl -p -e 's/_trim\.fastq//'`; \
+for file in `ls *_merged.trim.fastq`; \
+do outfile=`basename $file | perl -p -e 's/_merged\.trim\.fastq//'`; \
 echo "mapper.pl $file -e -h -m -o 3 -l 17 -r 50 -q -v -p \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
 -s ${outfile}_collapsed.fa -t ${outfile}.arf" \
@@ -90,7 +90,7 @@ echo "mapper.pl $file -e -h -m -o 3 -l 17 -r 50 -q -v -p \
 done
 
 # Split and run all scripts on Rodeo:
-split -d -l 12 mapper.sh mapper.sh.
+split -d -l 8 mapper.sh mapper.sh.
 for script in `ls mapper.sh.*`
 do
 chmod 755 $script
