@@ -1,4 +1,5 @@
 ##############################################################################
+# 				Project1: NEXTflex-v3 small RNA library prep kit 			 # 
 # miRNA-seq library kit comparison using PBMC-isolated miRNA from			 # 
 # Field-infected (n=4) and non-infected cattle (n=4)  						 # 
 #     --- Linux bioinformatics workflow for pre-processing of data ---       #
@@ -6,7 +7,7 @@
 # Authors: Sarah Faherty O'Donnell
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 11/01/2018
+# Last updated on: 18/01/2018
 
 ###############################
 # Generating md5 files in BYU supercomputer #
@@ -127,7 +128,7 @@ done
 rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp
 
 # Use Winscp to transfer fastqc files to local computer
-# Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/cd quality
+# Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/qualitycheck/FASTQCpre-filtering/Project1
 
 #############################################
 # Trimming of adapter sequence within reads #
@@ -202,7 +203,6 @@ nohup ./cutadapt.sh > cutadapt.sh.nohup &
 grep -c 'Finished' cutadapt.sh.nohup
 # or 
 tail cutadapt.sh.nohup
-
 
 # Generate a master file containing cutadapt trimming stats results:
 # I only have one .nohup file in this project so I don't need a for loop

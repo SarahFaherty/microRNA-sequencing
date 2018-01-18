@@ -7,7 +7,7 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 15/01/2018
+# Last updated on: 17/01/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
@@ -80,10 +80,30 @@ nohup mapper.pl NEXTflex-v10_S8_merged.trim.fastq -e -h -m -o 15 -l 17 -r 50 -q 
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
 -s test_collapsed.fa -t test.arf &
 
+###############################################################################
+#################################
+# The above script didn't work for some reason so instead we are testing the mapper.pl
+# script on a single _L001 file
+#################################
+cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/
+
+# Copy NEXTflex-v10_S8_L001 file to mapper directory 
+cp $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/\
+NEXTflex-v10_S8_L001_R1_001_trim.fastq.gz .
+
+# Unzip the file
+gunzip NEXTflex-v10_S8_L001_R1_001_trim.fastq.gz
+
+nohup mapper.pl NEXTflex-v10_S8_L001_R1_001_trim.fastq -e -h -m -o 20 -l 17 -r 50 -q -v -p \
+/home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
+-s test_collapsed.fa -t test.arf &
+
+##############################################################################
+
 # Create bash script to map miRNA reads to the reference genome:
 for file in `ls *_merged.trim.fastq`; \
 do outfile=`basename $file | perl -p -e 's/_merged\.trim\.fastq//'`; \
-echo "mapper.pl $file -e -h -m -o 3 -l 17 -r 50 -q -v -p \
+echo "mapper.pl $file -e -h -m -o 20 -l 17 -r 50 -q -v -p \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie1.2_index/Btau_UMD3.1_multi_index \
 -s ${outfile}_collapsed.fa -t ${outfile}.arf" \
 >> mapper.sh; \
