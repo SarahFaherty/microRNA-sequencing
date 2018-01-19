@@ -96,6 +96,8 @@ for file in `ls fastqc.sh.nohup`; \
 do more $file | grep "Failed to process file" >> failed_fastqc.txt
 done
 
+wc -l failed_fastqc.txt
+
 # Deleted all the HTML files:
 rm -r *.html
 

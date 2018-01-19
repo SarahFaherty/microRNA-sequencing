@@ -1,7 +1,7 @@
 ##############################################################################
-# 						Project1: NEXTflex_kit								 #
-# miRNA-seq library kit comparison using PBMC-isolated miRNA from			 # 
-# Field-infected (n=4) and non-infected cattle (n=4)  						 #
+#						Project4: NEBnext miRNA_LibraryKit_Study 			 #
+#	 miRNA-seq library kit comparison using PBMC-isolated miRNA from		 # 
+# 			Field-infected (n=4) and non-infected cattle (n=4)  			 #
 #    --- Linux bioinformatics workflow for known and novel miRNAs  ---       #
 #                     -- Method : miRDeep2 software --                       #
 ##############################################################################
@@ -11,26 +11,23 @@
 # Last updated on: 19/01/2018
 
 ########################################################################
-# Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
+# Uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
 ########################################################################
 
 # Create and enter temporary working directory:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project4/tmp
 cd !$
 
-# Create bash script to uncompress and merge trim.fast.gz from lanes
-# 001 and 002 for each library:
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1 \
--name *_L001_R1_001_trim.fastq.gz`; \
-do file2=`echo $file | perl -p -e 's/(_L001_)/_L002_/'`; \
-sample=`basename $file | perl -p -e 's/(NEXT\w+-\w\d+_\w\d_)\w+\d+_\w+\d+_\d*_trim.fastq.gz/$1/'`; \
-echo "zcat $file $file2 > ${sample}merged.trim.fastq" \
->> uncompress_merge.sh; \
-done
+# Copy NEB*trim.fastq.gz files to the tmp directory 
+cp $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project4/NEB*.fastq.gz .
 
-# Run script:
-chmod 755 uncompress_merge.sh
-nohup ./uncompress_merge.sh &
+# These files should not be merged as they are all different libaries
+# 3 unique to lane 7 and 3 unique to lane 8
+# The files do need to be uncompressed though:
+gunzip NEBNext2-*_trim.fastq.gz
+
+#### reference genome is already indexed ####
+#### Skip to mapper.pl step 			 ####
 
 #######################################
 # Index reference genome using Bowtie #
@@ -66,28 +63,28 @@ quantifier.pl
 miRDeep2.pl
 
 # Create and enter the miRDeep2 directory for mapping work:
-mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project4/mapper
 cd !$
 
 # Create symbolic links to FASTQ files:
 for file in \
-`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/tmp/*_merged.trim.fastq`; \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project4/tmp/*_trim.fastq`; \
 do ln -s \
-$file $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mapper/`basename $file`; \
+$file $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project4/mapper/`basename $file`; \
 done
 
 # Run mapper.pl in one FASTQ file to see if it's working well:
-mapper.pl NEXTflex-v10_S8_merged.trim.fastq -e -h -m -p \
+mapper.pl NEBNext2-1_S25_L007_R1_001_trim.fastq -e -h -m -p \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie-1.1.0_index/Btau_UMD3.1_multi_index \
 -s test_collapsed.fa -t test.arf -v
 
-# If this works, delete the test files
-rm test.arf test_collapsed.arf 
+# If this works, delete the test files:
+rm test.arf test_collapsed.fa 
 rm bowtie.log
-rm -r mapper_log
+rm -r mapper_logs
 
 # Create bash script to map miRNA reads to the reference genome:
-for file in `ls *_merged.trim.fastq`; \
+for file in `ls *_trim.fastq`; \
 do outfile=`basename $file | perl -p -e 's/_merged\.trim\.fastq//'`; \
 echo "mapper.pl $file -e -h -m -p \
 /home/workspace/genomes/bostaurus/UMD3.1_NCBI/bowtie-1.1.0_index/Btau_UMD3.1_multi_index \
