@@ -8,7 +8,7 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 22/01/2018
+# Last updated on: 23/01/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
@@ -246,7 +246,7 @@ $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mirdeep/bta_h
 done
 
 # Split and run all scripts on Rodeo:
-split -d -l 8 miRdeep2.sh miRdeep2.sh.
+split -d -l 1 miRdeep2.sh miRdeep2.sh.
 for script in `ls miRdeep2.sh.*`
 do
 chmod 755 $script
@@ -276,7 +276,7 @@ $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mirdeep/high_
 done
 
 # Split and run all scripts on Stampede:
-split -d -l 16 miRdeep2_high-conf.sh miRdeep2_high-conf.sh.
+split -d -l 1 miRdeep2_high-conf.sh miRdeep2_high-conf.sh.
 for script in `ls miRdeep2_high-conf.sh.*`
 do
 chmod 755 $script
@@ -294,9 +294,9 @@ cp $file \
 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/Project1/mirdeep.pl/regular/${outfile}_exp_mirdeep.csv; \
 done
 
-mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/Project1/high_conf
+mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/Project1/mirdeep.pl/high_conf
 cd !$
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/Counts/mirdeep2/Project1/high_confidence/NEXT* \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project1/mirdeep/high_confidence/NEXT* \
 -name miRNAs_expressed_all_samples*.csv`; \
 do outfile=`echo $file | perl -p -e 's/^.*mirdeep\/.*\/(.*)\/.*$/$1/'`; \
 cp $file \
