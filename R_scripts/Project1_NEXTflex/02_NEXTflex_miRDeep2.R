@@ -62,49 +62,140 @@ tidy_dgelist <- tidy(dgelist_filt, addSamples = TRUE)
 tidy_dgelist
 View(tidy_dgelist)
 
-# Clean animal IDs
-tidy_dgelist$animal %<>%
-  stringr::str_replace("A", "") %>%
-  fct_inorder()
+# Convert samples to factors
+tidy_dgelist$sample %<>%
+  factor(levels = c("NEXTflex_S1", "NEXTflex_S2", "NEXTflex_S3", "NEXTflex_S4",
+                    "NEXTflex_S5", "NEXTflex_S6", "NEXTflex_S7", "NEXTflex_S8"))
+# CHeck samples factors
+levels(tidy_dgelist$sample)
 
-# Change time point info for labels
-tidy_dgelist$time.point %<>%
-  str_replace("pre1", "-1 wk") %>%
-  str_replace("pre2", "-2 wk") %>%
-  str_replace("W1$", "+1 wk") %>%
-  str_replace("W2", "+2 wk") %>%
-  str_replace("W6", "+6 wk") %>%
-  str_replace("W10", "+10 wk") %>%
-  str_replace("W12", "+12 wk") %>%
-  factor(levels = c("-2 wk", "-1 wk", "+1 wk", "+2 wk",
-                    "+6 wk", "+10 wk", "+12 wk"))
-
-# Combine animal and time point info for
-# plotting labels
-tidy_dgelist %<>%
-  dplyr::mutate(labels = paste0(time.point, "_", animal))
-
-tidy_dgelist$labels %<>%
-  factor(levels = c("-2 wk_6511", "-2 wk_6514", "-2 wk_6520", "-2 wk_6522", "-2 wk_6526",
-                    "-2 wk_6635", "-2 wk_6636", "-2 wk_6637", "-2 wk_6644", "-2 wk_6698",
-                    "-1 wk_6511", "-1 wk_6514", "-1 wk_6520", "-1 wk_6522", "-1 wk_6526",
-                    "-1 wk_6635", "-1 wk_6636", "-1 wk_6637", "-1 wk_6644", "-1 wk_6698",
-                    "+1 wk_6511", "+1 wk_6514", "+1 wk_6520", "+1 wk_6522", "+1 wk_6526",
-                    "+1 wk_6635", "+1 wk_6636", "+1 wk_6637", "+1 wk_6644", "+1 wk_6698",
-                    "+2 wk_6511", "+2 wk_6514", "+2 wk_6520", "+2 wk_6522", "+2 wk_6526",
-                    "+2 wk_6635", "+2 wk_6636", "+2 wk_6637", "+2 wk_6644", "+2 wk_6698",
-                    "+6 wk_6511", "+6 wk_6514", "+6 wk_6520", "+6 wk_6522", "+6 wk_6526",
-                    "+6 wk_6635", "+6 wk_6636", "+6 wk_6637", "+6 wk_6644", "+6 wk_6698",
-                    "+10 wk_6511", "+10 wk_6514", "+10 wk_6520", "+10 wk_6522", "+10 wk_6526",
-                    "+10 wk_6635", "+10 wk_6636", "+10 wk_6637", "+10 wk_6644", "+10 wk_6698",
-                    "+12 wk_6511", "+12 wk_6514", "+12 wk_6520", "+12 wk_6522", "+12 wk_6526",
-                    "+12 wk_6635", "+12 wk_6636", "+12 wk_6637", "+12 wk_6644", "+12 wk_6698"))
-
-# Check factors
-levels(tidy_dgelist$labels)
+# Check group factors
+levels(tidy_dgelist$group)
 
 # Check data frame
 tidy_dgelist
+
+########################################################
+# 17 Plot: density of filtered gene counts per library #
+########################################################
+
+ggplot(tidy_dgelist, aes(x = log10(count + 1),
+                         y = sample)) +
+  scale_y_discrete(limits = rev(levels(tidy_dgelist$sample))) +
+  geom_density_ridges(aes(fill = group), alpha = 0.5) +
+  scale_fill_manual("condition",
+                    values = c("#b2b2b2", rep("#e06377", 6))) +
+  theme_bw(base_size = 14, base_family = "Calibri") +
+  ggtitle(paste0("Density of filtered gene counts per sample (", method, ")")) +
+  ylab("sample") +
+  xlab(expression(paste(log[10], "(counts + 1)"))) -> density_filt
+
+
+density_filt
+
+# Export high quality image
+ggsave(paste(method, "_density-filt.pdf", sep = ""),
+       plot      = density_filt,
+       device    = cairo_pdf,
+       path      = imgDir,
+       limitsize = FALSE,
+       dpi       = 300,
+       height    = 10,
+       width     = 9,
+       units     = "in")
+##########################################################
+# 18 Plot: Gene expression correlation within condition groups #
+##########################################################
+
+# Check gene expression correlation within infected cohort (libraries 1-4) and 
+# within control cohort (libraries 5-8) to 
+# identify potential outliers (CPM values not required with Spearman)
+
+
+png(file = file.path(paste0(imgDir, method, "_Infected", "_cor.png", sep = "")),
+      width = 1500, height = 1500, units = "px")
+chart.Correlation(R = log(x = (dgelist_norm$counts[, grep(
+    pattern = "S(1|2|3|4)$", x = colnames(dgelist_norm$counts),
+    perl = TRUE)] + 1), base = 2), histogram = TRUE, method = "spearman",
+    main = " Infected group expression correlation")
+dev.off()
+
+png(file = file.path(paste0(imgDir, method, "_Control", "_cor.png", sep = "")),
+    width = 1500, height = 1500, units = "px")
+chart.Correlation(R = log(x = (dgelist_norm$counts[, grep(
+  pattern = "S(5|6|7|8)$", x = colnames(dgelist_norm$counts),
+  perl = TRUE)] + 1), base = 2), histogram = TRUE, method = "spearman",
+  main = " Control group expression correlation")
+dev.off()
+
+##################################################
+# 19 Define function for getting MDS coordinates #
+##################################################
+
+getBCVcoord <- function(dgelst, time_pattrn) {
+  
+  mds <- plotMDS.DGEList(x = dgelst[ , grepl(paste(time_pattrn,
+                                                   collapse = "|"),
+                                             x = colnames(dgelst))],
+                         plot = FALSE,
+                         method = "bcv")
+  
+  mds_coord <- mds$cmdscale.out # Get coords to plot with ggplot2
+  
+  mds_coord %<>% # Tidy coords
+    tidy() %>%
+    dplyr::rename(sample = .rownames, x = X1, y = X2) %>%
+    dplyr::mutate(group = sample)
+  
+  mds_coord$group %<>% # Clean group info for plotting
+    str_replace("NEXTflex_", "") %>%
+    str_replace("S(5|6|7|8)", "Control") %>%
+    str_replace("S(1|2|3|4)", "Infected")
+  
+  return(mds_coord)
+  
+}
+
+##########################
+# 20 Get MDS coordinates #
+##########################
+
+# Get tidy MDS coordinates for all samples 
+all_coord <- getBCVcoord(dgelist_norm, c("_S1", "_S2", "_S3",
+                                         "_S4", "_S5", "_S6", "_S7", "_S8"))
+
+
+#####################################
+# 21 Plot: MDS plot #
+#####################################
+
+MDS_all <- ggplot(all_coord) +
+  geom_point(aes(x = x, y = y,
+                 colour = group,
+                 shape  = group),
+             size = 3) +
+  scale_colour_manual("Condition",
+                      values = c("#b2b2b2" , "#e06377")) +
+  scale_shape_manual("Condition",
+                     values = c(19, 17)) +
+  theme_bw(base_size = 14, base_family = "Calibri") +
+  ggtitle("NEXTflex kit") +
+  xlab("BCV distance 1") +
+  ylab("BCV distance 2")
+
+MDS_all
+
+# Export high quality image
+ggsave(filename  = paste(method, "_MDS_all.pdf", sep = ""),
+       plot      = MDS_all,
+       device    = cairo_pdf,
+       path      = imgDir,
+       limitsize = FALSE,
+       dpi       = 300,
+       height    = 10,
+       width     = 10,
+       units     = "in")
+
 
 #######################
 # 26 Save .RData file #

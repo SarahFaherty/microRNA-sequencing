@@ -243,12 +243,8 @@ $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project4/mirdeep/bta_h
 done
 
 # Split and run all scripts on Rodeo:
-split -d -l 1 miRdeep2.sh miRdeep2.sh.
-for script in `ls miRdeep2.sh.*`
-do
-chmod 755 $script
-nohup ./$script > ${script}.nohup &
-done
+chmod 755 miRdeep2.sh
+nohup ./miRdeep2.sh > miRdeep2.sh.nohup &
 
 # Create and enter the working directory for high confidence seqs from miRBase:
 mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project4/mirdeep/high_confidence
