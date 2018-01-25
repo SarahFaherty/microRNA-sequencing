@@ -301,7 +301,7 @@ ggplot(Disp) +
   scale_fill_manual("", values = c("black")) +
   scale_colour_manual("", values = c("red", "blue")) +
   theme_bw(base_size = 14, base_family = "Calibri") +
-  ggtitle("Estimated dispersions") +
+  ggtitle("Estimated dispersions for NEXTflex Kit") +
   xlab(expression(paste("Average ", log[2],"CPM"))) +
   ylab("Biological Coefficient of Variation") -> dgelist_BCV
 
