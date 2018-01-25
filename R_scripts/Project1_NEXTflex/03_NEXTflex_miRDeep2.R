@@ -53,7 +53,7 @@ Sys.setenv(TZ = "Europe/London")
 ####################
 
 # Fit a negative binomial generalized log-linear model
-# for each tag using the design matrix and calculated dispersions
+# using the design matrix and calculated dispersions
 dgelist_fit <- glmFit(y = dgelist_disp,
                       design = block_condition)
 
@@ -166,13 +166,13 @@ dev.off()
 
 
 #######################
-# 36 Save .RData file #
+# 34 Save .RData file #
 #######################
 
 save.image(file = paste0("miRNAseq_", method, ".RData", sep = ""))
 
 ##########################
-# 37 Save R session info #
+# 35 Save R session info #
 ##########################
 
 devtools::session_info()

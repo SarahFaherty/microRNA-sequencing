@@ -198,16 +198,12 @@ ggsave(filename  = paste(method, "_MDS_all.pdf", sep = ""),
        units     = "in")
 
 #################################################
-# 22 Create a design matrix for paired analysis #
+# 22 Create a design matrix                    #
 #################################################
 
-# Create a design matrix with condition? as a blocking factor
+# Create a design matrix with condition as blocking factor
 block_condition <- model.matrix(~ group,
                              data = dgelist_norm$samples)
-summary(dgelist_norm$counts)
-summary(dgelist_norm$samples)
-dim(dgelist_norm$counts)
-summary(dgelist_norm$genes)
 
 dim(block_condition)
 dim(dgelist_norm$samples)
@@ -241,7 +237,7 @@ dgelist_disp <- estimateDisp.DGEList(y       = dgelist_norm,
                                      verbose = TRUE)
 
 names(dgelist_disp)
-
+dim(dgelist_disp)
 # Check the calculated dispersion
 dgelist_disp$common.dispersion
 
@@ -251,8 +247,10 @@ dgelist_disp$common.dispersion
 sqrt(dgelist_disp$common.dispersion)
 # BCV of each gene (useful for possible reference genes)
 sqrt(dgelist_disp$tagwise.dispersion)
+min(sqrt(dgelist_disp$tagwise.dispersion))
+max(sqrt(dgelist_disp$tagwise.dispersion))
 
-# Create a matrix of the tagwise dispersion associated with gene information
+# Create a (dataframe) matrix of the tagwise dispersion associated with gene information
 Tagwisedisp <- as.data.frame(cbind(dgelist_disp$genes,
                                    dgelist_disp$tagwise.dispersion))
 head(Tagwisedisp)
