@@ -12,7 +12,7 @@
 
 # Authors of current version (2.0.0): Sarah Faherty O'Donnell
 # DOI badge of current version:
-# Last updated on 23/01/2018
+# Last updated on 25/01/2018
 
 ############################################
 # 14 Load and/or install required packages #
@@ -20,6 +20,7 @@
 
 library(here)
 library(edgeR)
+library(statmod)
 library(tidyverse)
 library(devtools)
 library(stringr)
@@ -39,7 +40,7 @@ library(cowplot)
 #install.packages("PerformanceAnalytics")
 #install.packages("ggrepel")
 #install.packages("cowplot")
-
+#install.packages("statmod")
 ##################################
 # 15 Working directory and RData #
 ##################################
@@ -196,15 +197,137 @@ ggsave(filename  = paste(method, "_MDS_all.pdf", sep = ""),
        width     = 10,
        units     = "in")
 
+#################################################
+# 22 Create a design matrix for paired analysis #
+#################################################
+
+# Create a design matrix with condition? as a blocking factor
+block_condition <- model.matrix(~ group,
+                             data = dgelist_norm$samples)
+summary(dgelist_norm$counts)
+summary(dgelist_norm$samples)
+dim(dgelist_norm$counts)
+summary(dgelist_norm$genes)
+
+dim(block_condition)
+dim(dgelist_norm$samples)
+block_condition
+
+# Rename design matrix columns for simplicity
+colnames(block_condition) %<>%
+  str_replace("group", "")
+  
+
+head(block_condition)
+
+# Output the design matrix info
+as.data.frame(block_condition) %>%
+  rownames_to_column(var = "Samples") %>%
+  write_csv(path = file.path(paste0(tablesDir, method, "_design-matrix.csv")),
+          col_names = TRUE) 
+  
+
+
+#########################################
+# 23 Estimate the dispersion parameters #
+#########################################
+
+# Common and trended dispersions are estimated with the
+# Cox-Reid method and tagwise dispersions with the
+# empirical Bayes method
+dgelist_disp <- estimateDisp.DGEList(y       = dgelist_norm,
+                                     design  = block_condition,
+                                     robust  = TRUE,
+                                     verbose = TRUE)
+
+names(dgelist_disp)
+
+# Check the calculated dispersion
+dgelist_disp$common.dispersion
+
+# Check the calculated dispersion's square root,
+# which corresponds to the biological coefficient of variation (BCV)
+# Compare the different kits BCVs
+sqrt(dgelist_disp$common.dispersion)
+# BCV of each gene (useful for possible reference genes)
+sqrt(dgelist_disp$tagwise.dispersion)
+
+# Create a matrix of the tagwise dispersion associated with gene information
+Tagwisedisp <- as.data.frame(cbind(dgelist_disp$genes,
+                                   dgelist_disp$tagwise.dispersion))
+head(Tagwisedisp)
+dim(Tagwisedisp)
+
+# Output tagwise dispersion values with gene info
+Tagwisedisp %>%
+  rownames_to_column(var = "miRBase_ID") %>%
+  write_csv(path = file.path(paste0(tablesDir, method, "_Tagwise_dispersion.csv")),
+          col_names = TRUE)
+
+################################
+# 24 Plot: BCV and dispersions #
+################################
+
+# Create a dataframe with the dispersion values
+names(dgelist_disp)
+
+Disp <- as.data.frame(cbind(dgelist_disp$genes,
+                            dgelist_disp$tagwise.dispersion,
+                            dgelist_disp$common.dispersion,
+                            dgelist_disp$trended.dispersion,
+                            dgelist_disp$AveLogCPM))
+
+head(Disp)
+dim(Disp)
+
+colnames(Disp) %<>%
+  str_replace("dgelist_disp\\$", "")
+
+Disp %<>%
+  dplyr::mutate(type_point = "Tagwise dispersion") %>%
+  dplyr::mutate(type_hline = "Common dispersion") %>%
+  dplyr::mutate(type_smooth = "Trended dispersion")
+
+# Plot all dispersions
+ggplot(Disp) +
+  geom_point(aes(x = AveLogCPM,
+                 y = sqrt(tagwise.dispersion),
+                 fill = type_point),
+             alpha = 0.5) +
+  geom_hline(aes(yintercept = sqrt(common.dispersion),
+                 colour = type_hline)) +
+  geom_smooth(aes(x = AveLogCPM,
+                  y = sqrt(trended.dispersion),
+                  colour = type_smooth),
+              linetype = 2) +
+  scale_fill_manual("", values = c("black")) +
+  scale_colour_manual("", values = c("red", "blue")) +
+  theme_bw(base_size = 14, base_family = "Calibri") +
+  ggtitle("Estimated dispersions") +
+  xlab(expression(paste("Average ", log[2],"CPM"))) +
+  ylab("Biological Coefficient of Variation") -> dgelist_BCV
+
+dgelist_BCV
+
+# Output high resolution plot
+ggsave(paste(method, "_BCV.pdf", sep = ""),
+       plot      = dgelist_BCV,
+       device    = cairo_pdf,
+       path      = imgDir,
+       limitsize = FALSE,
+       dpi       = 300,
+       height    = 8,
+       width     = 10,
+       units     = "in")
 
 #######################
-# 26 Save .RData file #
+# 25 Save .RData file #
 #######################
 
 save.image(file = paste0("miRNAseq_", method, ".RData", sep = ""))
 
 ##########################
-# 27 Save R session info #
+# 26 Save R session info #
 ##########################
 
 devtools::session_info()
