@@ -147,24 +147,15 @@ Up_Down %<>% dplyr::mutate(labelsDown = paste(down,"Decreased", sep = ' '))
 Up_Down
 
 Up_Down %>%
-  dplyr::select(starts_with("labels")) -> labels
+  dplyr::select(up, down) %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  dplyr::select(V1) %>%
+  dplyr::mutate(expression = paste(V1)) -> df 
 
-trans_labels <- t(labels)
-header <- ("direction")
-colnames(trans_labels) <- header
-head(trans_labels)
-trans_labels <- as_data_frame(trans_labels)
+df
 
-Up_Down %>%
-  dplyr::select("up", "down") -> DEs 
-
-trans_DEs <- t(DEs)
-header <- ("numberofDEs")
-colnames(trans_DEs) <- header
-head(trans_DEs)
-trans_DEs <- as_data_frame(trans_DEs) 
-
-vsize_df <- rbind(trans_labels, trans_DEs)
 
 # Plot chart increased expression
 # Run this chunk together
@@ -173,9 +164,9 @@ cairo_pdf(filename = file.path(paste0(imgDir, method, "_tree_up.pdf")),
           height   = 4,
           family   = "Calibri",
           fallback_resolution = 300)
-treemap(trans_labels,
-        index             = "direction",
-        vsize             = ""
+treemap(df,
+        index             = "expression",
+        vSize             = "V1",
         type              = "index",
         palette           = "PRGn",
         title             = "QIAseq kit: Differentially expressed miRNA",

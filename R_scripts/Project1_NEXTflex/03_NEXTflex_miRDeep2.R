@@ -143,7 +143,19 @@ Up_Down %<>% dplyr::mutate(labelsUp = paste(up, "Increased", sep = ' '))
 Up_Down %<>% dplyr::mutate(labelsDown = paste(down,"Decreased", sep = ' '))
 
 # Check data frame
-Up_Down
+Up_Down 
+
+Up_Down %>%
+  dplyr::select(up, down) %>%
+  t() %>%
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  dplyr::select(V1) %>%
+  dplyr::mutate(expression = paste(V1)) -> df 
+
+df
+
+
 
 # Plot chart increased expression
 # Run this chunk together
@@ -152,9 +164,9 @@ cairo_pdf(filename = file.path(paste0(imgDir, method, "_tree_up.pdf")),
           height   = 4,
           family   = "Calibri",
           fallback_resolution = 300)
-treemap(Up_Down,
-        index             = "labelsUp", "labelsDown",
-        vSize             = "up", "down",
+treemap(df,
+        index             = "expression",
+        vSize             = "V1",
         type              = "index",
         palette           = "PRGn",
         title             = "NEXTflex kit: Differentially expressed miRNA",
