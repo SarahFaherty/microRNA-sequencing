@@ -150,7 +150,7 @@ getBCVcoord <- function(dgelst, time_pattrn) {
     dplyr::mutate(group = sample)
   
   mds_coord$group %<>% # Clean group info for plotting
-    str_replace("QIAseq3_", "") %>%
+    str_replace("SMARTer4_", "") %>%
     str_replace("S(21|22|23|24)", "Control") %>%
     str_replace("S(17|18|19|20)", "Infected")
   

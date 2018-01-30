@@ -65,8 +65,8 @@ View(tidy_dgelist)
 
 # Convert samples to factors
 tidy_dgelist$sample %<>%
-  factor(levels = c("NEBNext2.1_S25", "NEBNext2.3_S26", "NEBNext2.4_S28",
-                    "NEBNext2.5_S27", "NEBNext2.6_S29", "NEBNext2.8_S30"))
+  factor(levels = c("NEBNext2_S25", "NEBNext2_S26", "NEBNext2_S28",
+                    "NEBNext2_S27", "NEBNext2_S29", "NEBNext2_S30"))
 # CHeck samples factors
 levels(tidy_dgelist$sample)
 
@@ -150,7 +150,7 @@ getBCVcoord <- function(dgelst, time_pattrn) {
     dplyr::mutate(group = sample)
   
   mds_coord$group %<>% # Clean group info for plotting
-    str_replace("NEBNext2\\.\\d", "") %>%
+    str_replace("NEBNext2_", "") %>%
     str_replace("S(27|29|30)", "Control") %>%
     str_replace("S(25|26|28)", "Infected")
   
