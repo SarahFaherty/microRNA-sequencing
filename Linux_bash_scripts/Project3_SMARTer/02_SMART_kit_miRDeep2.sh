@@ -8,7 +8,7 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 23/01/2018
+# Last updated on: 01/02/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
@@ -99,6 +99,25 @@ done
 chmod 755 mapper.sh
 nohup ./mapper.sh > mapper.sh.nohup &
 
+# Generate a master file containing mapping statistics
+for file in \
+`ls $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/mirdeep2/Project3/mapper/mapper*.nohup`; \
+do grep -oP "log_\d+" $file >> ./log_id.txt; \
+grep "total:" $file >> ./totals.txt; \
+paste log_id.txt totals.txt > ./stats.txt; \
+done
+
+# Using awk, keep only columns of interest from stats.txt
+awk '{print $1, $3, $4, $5, $6, $7}' stats.txt > stats2.txt
+
+# adding header to stats2.txt and save mapper_stats.txt
+echo -e "Log_Id\tInput reads\tTotal Mapped Reads\tTotal Unmapped Reads\tPercentage Mapped Reads\t Percentage Unmapped Reads" \
+| cat - ./stats2.txt > ./mapper_stats.txt
+
+# delete unnecessary files 
+rm -r log_id.txt totals.txt stats.txt stats2.txt
+
+# Transfer mapper_stats.txt to laptop using Winscp
 
 ################################################################
 # Quantification of known miRNAs using miRDeep2: quantifier.pl #

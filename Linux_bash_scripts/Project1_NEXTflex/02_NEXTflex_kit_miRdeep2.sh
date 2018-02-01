@@ -8,7 +8,7 @@
 # Authors: Sarah Faherty O'Donnell 
 # Zenodo DOI badge:
 # Version 
-# Last updated on: 23/01/2018
+# Last updated on: 01/02/2018
 
 ########################################################################
 # Merge and uncompress miRNA-seq FASTQ files to be used with miRDeep2  #
