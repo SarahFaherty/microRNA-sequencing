@@ -1,17 +1,16 @@
 ##############################################################################
-# 			Project4: NEBnext Multplex small RNA library prep 20Kit 		 # 
-# 		miRNA-seq library kit comparison using PBMC-isolated miRNA from		 # 
-# 				Field-infected (n=4) and non-infected cattle (n=4)			 #	  			
+# 			Project4: NEBnext Multplex small RNA library prep 20Kit 		         # 
+# 		miRNA-seq library kit comparison using PBMC-isolated miRNA from		     # 
+# 				Field-infected (n=4) and non-infected cattle (n=4)			           #	  			
 #     --- Linux bioinformatics workflow for pre-processing of data ---       #
 ##############################################################################
-# Authors: Sarah Faherty O'Donnell
-# Zenodo DOI badge:
-# Version 
-# Last updated on: 19/01/2018
 
-###############################
+# Authors: Sarah Faherty O'Donnell, Carolina N. Correia.
+# Last updated on: 20/01/2021
+
+#############################################
 # Generating md5 files in BYU supercomputer #
-##############################
+#############################################
 cd /fslgroup/fslg_dnasc/compute/170901_D00723_0220_ACBGBTANXX/Unaligned/Project/ 
 for file in `find /fslgroup/fslg_dnasc/compute/170901_D00723_0220_ACBGBTANXX/Unaligned/ \
 -name '*.fastq.gz'`; \
@@ -28,7 +27,6 @@ cd !$
 # Download data from MSU server into Rodeo server directory made above
 screen -D -R BYU_miRNA_download2
 scp -r fslcollab164@scp.fsl.byu.edu:/fslhome/fslcollab164/fsl_groups/fslg_dnasc/compute/170901_D00723_0220_ACBGBTANXX/Unaligned/ .
-
 
 # Change directory permissions:
 chmod -R 755 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/
@@ -64,65 +62,53 @@ chmod -R 555 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/
 # FastQC quality check of raw FASTQ files #
 ###########################################
 
-# Required software is FastQC v0.11.5, consult manual/tutorial
+# Required software is FastQC v0.11.9, consult manual/tutorial
 # for details: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 # Create and enter the quality check output directory:
-mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4
+mkdir -p /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4
 cd !$
 
 # Run FastQC in one file to see if it's working well:
-fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4 \
---noextract --nogroup -t 2 \
-$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project4/NEBNext2-1_S25_L007_R1_001.fastq.gz
+fastqc -o /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4 \
+--noextract --nogroup -t 10 \
+/home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project4/NEBNext2-1_S25_L007_R1_001.fastq.gz
 
 # Create a bash script to perform FastQC quality check on all fastq.gz files in the various project directories using *:
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project4/ \
--name *fastq.gz`; do echo "fastqc --noextract --nogroup -t 2 \
--o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/ $file" \
+for file in `find /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project4/ \
+-name *fastq.gz`; do echo "fastqc --noextract --nogroup -t 10 \
+-o /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/ $file" \
 >> fastqc.sh; done
 
+# Check the number of files in fastqc.sh is correct
+# Given we have 4 Project4 libraries across 2 lanes, wc should be 6 (+ 3 undetermined files = 9)
+wc -l fastqc.sh
+
 # Run script on Rodeo
-# Didn't need to split the fastqc because there were only 6 files for Project 4 
+# Didn't need to split the fastqc because there were only 16 files in Project 1 
 chmod 755 fastqc.sh
 nohup ./fastqc.sh > fastqc.sh.nohup & 
 
-# Check the number of files in fastqc.sh is correct
-# Given we have 3 Project4 libraries across 2 lanes, wc should be 6
-wc -l fastqc.sh
+# Deleted all the HTML files:
+rm -r *.html
 
 # Check if all the files were processed:
 for file in `ls fastqc.sh.nohup`; \
 do more $file | grep "Failed to process file" >> failed_fastqc.txt
 done
 
-wc -l failed_fastqc.txt
-
-# Deleted all the HTML files:
-rm -r *.html
-
-# Check all output from FastQC:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/tmp
-
-for file in `ls *_fastqc.zip`; do unzip \
-$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/tmp; \
-done
-
-for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/tmp \
--name summary.txt`; do more $file >> reports_pre-filtering.txt; \
-done
-
-for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/tmp \
--name fastqc_data.txt`; do head -n 10 $file >> basic_stats_pre-filtering.txt; \
-done
+# Transfer compressed folders to personal laptop via SCP
+# and process output files with fastqcr R package:
+scp -r \
+ccorreia@rodeo.ucd.ie:/home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp .
 
 # Remove temporary folder and its files:
-rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project4/tmp
+rm -r tmp
 
-# Use Winscp to transfer fastqc files to local computer
-# Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/qualitycheck/FASTQCpre-filtering/Project4
+
+
+
+
 
 #############################################
 # Trimming of adapter sequence within reads #

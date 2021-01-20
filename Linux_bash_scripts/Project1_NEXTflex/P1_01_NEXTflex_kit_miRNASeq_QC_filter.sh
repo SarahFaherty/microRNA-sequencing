@@ -1,17 +1,16 @@
-	##############################################################################
-# 				Project3: SMARTer small RNA library prep kit 				 # 
-# 	miRNA-seq library kit comparison using PBMC-isolated miRNA from			 # 
-#	Field-infected (n=4) and non-infected cattle (n=4)  
+##############################################################################
+# 				Project1: NEXTflex-v3 small RNA library prep kit 			             # 
+# miRNA-seq library kit comparison using PBMC-isolated miRNA from		      	 # 
+# Field-infected (n=4) and non-infected cattle (n=4)  					          	 # 
 #     --- Linux bioinformatics workflow for pre-processing of data ---       #
 ##############################################################################
-# Authors: Sarah Faherty O'Donnell
-# Zenodo DOI badge:
-# Version 
-# Last updated on: 18/01/2018
 
-###############################
+# Authors: Sarah Faherty O'Donnell, Carolina N. Correia.
+# Last updated on: 20/01/2021
+
+#############################################
 # Generating md5 files in BYU supercomputer #
-##############################
+#############################################
 cd /fslgroup/fslg_dnasc/compute/170901_D00723_0220_ACBGBTANXX/Unaligned/Project/ 
 for file in `find /fslgroup/fslg_dnasc/compute/170901_D00723_0220_ACBGBTANXX/Unaligned/ \
 -name '*.fastq.gz'`; \
@@ -34,9 +33,11 @@ scp -r fslcollab164@scp.fsl.byu.edu:/fslhome/fslcollab164/fsl_groups/fslg_dnasc/
 chmod -R 755 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data
 
 # grep relevant lines from the md5 file
-grep SMART md5byu.txt > md5byu_Project3.txt
-wc -l md5byu_Project3.txt
-cp md5byu_Project3.txt Project3
+cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned 
+grep NEXT md5byu.txt > md5byu_Project1.txt
+wc -l md5byu_Project1.txt
+cp md5byu_Project1.txt Project1
+
 
 # First need to correct path from byu md5 files to contain only 
 # file names
@@ -46,214 +47,193 @@ cp md5byu_Project3.txt Project3
 # piped column to a new file 
 # used paste to combine columns and piped to a new file
 # Repeat this for each project
-cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3
-awk '{print $2}' md5byu_Project3.txt | perl -p -e 's/fslgroup.*(SMART.*\.gz)$/$1/' | perl -p -e s'/\///' > byumd5_filenames.txt 
-paste <(awk '{print $1}' md5byu_Project3.txt) <(awk '{print $1}' byumd5_filenames.txt) > md5byu_Project3_corrected.txt 
+cd $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1
+awk '{print $2}' md5byu_Project1.txt | perl -p -e 's/fslgroup.*(NEXT.*\.gz)$/$1/' | perl -p -e s'/\///' > byumd5_filenames.txt 
+paste <(awk '{print $1}' md5byu_Project1.txt) <(awk '{print $1}' byumd5_filenames.txt) > md5byu_Project1_corrected.txt 
 
 # Check md5sum files  
-md5sum -c md5byu_Project3_corrected.txt >> md5_UCD_Project3.txt
-
-# Check the correct number of files have been md5sum checked
-# Should be 16
-wc -l md5_UCD_Project3.txt 
+md5sum -c md5byu_Project1_corrected.txt >> md5_UCD_Project1.txt
 
 # Check that all files passed the check:
-grep -c 'OK' md5_UCD_Project3.txt
+grep -c 'OK' md5_UCD_Project1.txt
 
-# Change directory permissions to read and execute only:
+
+# Change directory permissions to read and execute only: ???
 chmod -R 555 $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data
+
 
 ###########################################
 # FastQC quality check of raw FASTQ files #
 ###########################################
 
-# Required software is FastQC v0.11.5, consult manual/tutorial
+# Required software is FastQC v0.11.9, consult manual/tutorial
 # for details: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 # Create and enter the quality check output directory:
-mkdir -p $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3
+mkdir -p /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1
 cd !$
 
 # Run FastQC in one file to see if it's working well:
-fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3 \
---noextract --nogroup -t 2 \
-$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3/SMARTer4-1_S17_L005_R1_001.fastq.gz
+fastqc -o /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1 \
+--noextract --nogroup -t 10 \
+/home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/NEXTflex-v10_S8_L001_R1_001.fastq.gz
+
+# Check the QC report for this file 
+# Use WinSCP to drag folders to local computer and launch html file from local
 
 # Create a bash script to perform FastQC quality check on all fastq.gz files in the various project directories using *:
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3/ \
--name *fastq.gz`; do echo "fastqc --noextract --nogroup -t 2 \
--o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/ $file" \
+for file in `find /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/ \
+-name *fastq.gz`; do echo "fastqc --noextract --nogroup -t 10 \
+-o /home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1 $file" \
 >> fastqc.sh; done
 
-# Run script on Rodeo
-# Didn't need to split the fastqc because there were only 16 files in Project 1 
-chmod 755 fastqc.sh
-nohup ./fastqc.sh > fastqc.sh.nohup & 
-
 # Check the number of files in fastqc.sh is correct
-# Given we have 8 Project2 libraries across 2 lanes, wc should be 16
+# Given we have 8 Project1 libraries across 2 lanes, wc should be 16 (+ 2 undetermined files = 18)
 wc -l fastqc.sh
 
-# Check progress of QC
-tail fastqc.sh.nohup
-
-#Check if all the files were processed:
-for file in `ls fastqc.sh.nohup`; \
-do more $file | grep "Failed to process file" >> failed_fastqc.txt
-done
-
-wc -l failed_fastqc.txt
+# Run script on Rodeo 
+chmod 755 fastqc.sh
+nohup ./fastqc.sh > fastqc.sh.nohup & 
 
 # Deleted all the HTML files:
 rm -r *.html
 
-# Check all output from FastQC:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/tmp
-
-for file in `ls *_fastqc.zip`; do unzip \
-$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/tmp; \
+# Check if all the files were processed:
+for file in `ls fastqc.sh.nohup`; \
+do more $file | grep "Failed to process file" >> failed_fastqc.txt
 done
 
-for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/tmp \
--name summary.txt`; do more $file >> reports_pre-filtering.txt; \
-done
-
-for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/tmp \
--name fastqc_data.txt`; do head -n 10 $file >> basic_stats_pre-filtering.txt; \
-done
+# Transfer compressed folders to personal laptop via SCP
+# and process output files with fastqcr R package:
+scp -r \
+ccorreia@rodeo.ucd.ie:/home/workspace/sfahertyodonnell/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project1/tmp .
 
 # Remove temporary folder and its files:
-rm -rf $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/pre-filtering/Project3/tmp
+rm -r tmp
 
-# Use Winscp to transfer fastqc files to local computer
-# Saved in Dropbox/WP2/miRNA_lib/miSeqbioinformatics/BYUdata/qualitycheck/FASTQCpre-filtering/Project3
+
+
+
+
+
+
+
 
 #############################################
 # Trimming of adapter sequence within reads #
 #############################################
-
-# Required software is cutadapt (version 1.10).
-# Consult manual for details:
-# https://cutadapt.readthedocs.io/en/stable/guide.html
-# Check what version of cutadapt we have on Rodeo 
-# Verion as of the 18/01/2018 is Cutadapt v1.14
+# Check what version of cutadapt we have on Rodeo
 cutadapt --v 
 
 # Check if this is the latest version online
 # If not, do we require the newer version for this analysis?
 # Check the changes between the two versions and make decision
 
+# Required software is cutadapt (version 1.10).
+# Consult manual for details:
+# https://cutadapt.readthedocs.io/en/stable/guide.html
+# Use "cutadapt --help" to see all command-line options.
+# See http://cutadapt.readthedocs.io/ for full documentation.
+
+# download and install TrimGalore
+curl -fsSL https://github.com/FelixKrueger/TrimGalore/archive/0.4.3.tar.gz -o trim_galore.tar.gz
+tar xvzf trim_galore.tar.gz
+
 # Create and enter working directory:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/
 cd !$
 
 #############################################
-# Use cutadapt to trim one file in Project3 #
+# Use cutadapt to trim one file in Project1 #
 #############################################
-# Path to location of project 3 (SMARTer) raw data is \
-# ~/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3/
+# Path to location of project 1 (NEXTFlex) raw data is \
+# ~/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/
 #############################################
-# Consult SMARTer manual for details on trimming:
-# file:///C:/Users/Sarah/Downloads/SMARTer%20smRNA-Seq%20Kit%20for%20Illumina%20User%20Manual_040816.pdf
-
-# As per page 11 of SMARTer manual, the first 3 nucleotides of the first sequencing read (Read1) are
-# derived from the template switching oligo and so:
-# THESE 3 NUCLEOTIDES MUST BE TRIMMED PRIOR TO MAPPING
-# A significant proportion of reads will end with STRETCHES OF As (up to 15 As) which 
-# SHOULD BE TRIMMED PRIOR TO MAPPING
-# I'm going to start with trimming 10 As as recommended by Clontech in the link below:
-# http://www.clontech.com/IE/Products/cDNA_Synthesis_and_Library_Construction/Next_Gen_Sequencing_Kits/ibcGetAttachment.jsp?cItemId=117292&fileId=7134873&sitex=10023:22372:US
-
+# Consult NEXTflex manual for details on trimming:
+# http://www.biooscientific.com/Portals/0/Manuals/NGS/5132-05-NEXTflex-Small-RNA-Seq-v3-16-06.pdf
+# 3' adapter sequence for NEXTflex kit is TGGAATTCTCGGGTGCCAAGG
+# -u 4 and -u -4 is used here to trim 4 bases at both ends after adapter clipping
+# -u is the same as --cut
+# This was specified in NEXTflex manual pg.5 
 # -O 10 is the minimum overlap length of specified adapter seq and adapter seq \
 # in reads
 # --discard-untrimmed
 # -m 17 will discard reads less than 17bp
-# -u removes the first 3 bp from the 5' end of the reads (as per manual guidelines state)
-# This resulted in the following summary in test_trim: 
-#Total reads processed:                 191,265
-#Reads with adapters:                    84,430 (44.1%)
-#Reads that were too short:              45,167 (23.6%)
-#Reads written (passing filters):        39,263 (20.5%)
+# This resulted in the following summary: 
+# Total reads processed:              13,231,215
+# Reads with adapters:                11,066,716 (83.6%)
+# Reads that were too short:           1,325,513 (10.0%)
+# Reads written (passing filters):     9,741,203 (73.6%)
 
-#Total basepairs processed:     9,039,371 bp
-#Total written (filtered):        864,892 bp (9.6%)
-
-cutadapt -a AAAAAAAAAA -O 10 --discard-untrimmed -m 17 \
- -u 3 -o test_trim.fastq.gz \
-$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3/SMARTer4-1_S17_L005_R1_001.fastq.gz
+cutadapt -a TGGAATTCTCGGGTGCCAAGG -O 10 --discard-untrimmed -m 17 \
+-u 4 -u -4 -o test_trim.fastq.gz \
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1/NEXTflex-v10_S8_L001_R1_001.fastq.gz
 
 # If happy with the trimming parameters, remove the test_trim file
 rm test_trim.fastq.gz
 
-# Create bash script to trim the polyAs and 3bp at the 5' end of each
+# Create bash script to trim the Illumina RNA 3’ Adapter (RA3) of each
 # FASTQ file while keeping the sequencing lane information.
 # Make sure to include all parameters of the code above
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project3 \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/raw_data/Unaligned/Project1 \
 -name *fastq.gz`; \
 do outfile=`basename $file | perl -p -e 's/.fastq.gz//'`; \
-echo "cutadapt -a AAAAAAAAAA -O 10 --discard-untrimmed -m 17 \
- -u 3 -o./${outfile}_trim.fastq.gz $file" \
+echo "cutadapt -a TGGAATTCTCGGGTGCCAAGG -O 10 \
+--discard-untrimmed -m 17 -u 4 -u -4 -o ./${outfile}_trim.fastq.gz $file" \
 >> cutadapt.sh; \
 done
 
 # Run scripts on Rodeo:
-# cutadapt.sh.nohup is where the output summaries from cutadapt get sent
 chmod 755 cutadapt.sh
 nohup ./cutadapt.sh > cutadapt.sh.nohup &
-
-
-# Check status of trimming:
-tail cutadapt.sh.nohup
+# cutadapt.sh.nohup is where the output summaries from cutadapt get sent
 
 # Check if all files were processed:
 grep -c 'Finished' cutadapt.sh.nohup
+# or 
+tail cutadapt.sh.nohup
 
 # Generate a master file containing cutadapt trimming stats results:
 # I only have one .nohup file in this project so I don't need a for loop
 # grep -oP uses perl reg expression for grep to get the name of the files
-# this command will get the name of each file starting with QIA
+# this command will get the name of each file starting with NEXT
 # and finishing with trim.fastq.gz
 # . in perl means anything
 # + in perl means for one or more characters
 # because its not a for loop we don't need to append to the .txt file
 
-grep -oP "SMART.+trim.fastq.gz" cutadapt.sh.nohup \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/filename.txt \
+grep -oP "NEXT.+trim.fastq.gz" cutadapt.sh.nohup \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/filename.txt \
 grep "Total reads processed\:" cutadapt.sh.nohup | \
 perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)/$1/' \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/processed.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/processed.txt \
 grep "Reads with adapters\:" cutadapt.sh.nohup | \
 perl -p -e 's/\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/reads_with_adapters.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/reads_with_adapters.txt \
 grep "Reads that were too short\:" cutadapt.sh.nohup | \
 perl -p -e 's/\w*\s\w*\s\w*\s\w*\s\w*\:\s*(\d*.\d*.\d*)\s.*/$1/' \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/short.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/short.txt \
 grep "Reads written (passing filters)\:" cutadapt.sh.nohup | \
 perl -p -e 's/\w*\s\w*\s.\w*\s\w*.\:\s*(\d*.\d*.\d*)\s.*/$1/' \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/trimmed.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/trimmed.txt \
 paste filename.txt processed.txt reads_with_adapters.txt short.txt trimmed.txt \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/trimmed_stats.txt
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/trimmed_stats.txt
 echo -e "Sample\tTotal reads processed\tReads with \
 adapters\tReads that were too short\tReads written (passing filters)\t" \
-> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/headers.txt \
+> $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/headers.txt \
 | cat headers.txt trimmed_stats.txt > trimming_stats.txt
 
 # Check the correct number of files are in the new txt files
-# should be 16 for each apart from trimming_stats.txt which
-# should have 17 because of the header line
+# should be 16 for each
 wc -l filename.txt
 wc -l processed.txt
 wc -l reads_with_adapters.txt
 wc -l short.txt
 wc -l trimmed.txt
-wc -l trimmed_stats.txt
-wc -l trimming_stats.txt
+
 
 rm -r filename.txt processed.txt reads_with_adapters.txt \
 short.txt trimmed.txt trimmed_stats.txt headers.txt
-
 
 ###############################################
 # FastQC quality check of trimmed FASTQ files #
@@ -263,18 +243,19 @@ short.txt trimmed.txt trimmed_stats.txt headers.txt
 # for details: http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
 
 # Create and enter working directory:
-mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/
+mkdir $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1
 cd !$
 
 # Run FastQC in one file to see if it's working well:
-fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3 \
+fastqc -o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1 \
 --noextract --nogroup -t 2 \
-$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/SMARTer4-1_S17_L005_R1_001_trim.fastq.gz
+$HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/NEXTflex-v10_S8_L001_R1_001_trim.fastq.gz
 
 # Create bash script to perform FastQC quality check on all trim.fastq.gz files:
-for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project3/ \
+for file in `find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/trimming/Project1/ \
 -name *trim.fastq.gz`; do echo "fastqc --noextract --nogroup -t 2 \
--o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3 $file" \
+-o $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1 $file" \
 >> fastqc.sh; done
 
 # Run all scripts on Rodeo:
@@ -297,16 +278,16 @@ rm -r *.html
 mkdir tmp
 
 for file in `ls *_fastqc.zip`; do unzip \
-$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3/tmp; \
+$file -d $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp; \
 done
 
 for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp \
 -name summary.txt`; do more $file >> reports_post-filtering.txt; \
 done
 
 for file in \
-`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project3/tmp \
+`find $HOME/BTB_SFI_Project/WP2/miRNA_LibraryKit_Study/quality_check/post_filtering/Project1/tmp \
 -name fastqc_data.txt`; do head -n 10 $file >> basic_stats_post-filtering.txt; \
 done
 
@@ -316,9 +297,6 @@ rm -r tmp
 #######################################
 # Reference genome UMD3.1 preparation #
 #######################################
-
-#  ******GENOME ALREADY PREPARED WHEN ANALYSING PROJECT1 DATA*****			#
-# Don't need to do this again, but this was how it was done...for reference #
 
 # As we use miRbase as an annotation source for miRNA analyses
 # We must use the same assembly version that they did
